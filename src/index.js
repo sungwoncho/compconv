@@ -1,75 +1,36 @@
-const babylon = require('babylon');
+//import babylon from 'babylon';
+const babylon = require('babylon')
+import traverse from 'babel-traverse';
+import generate from 'babel-generator';
 
-const sample1 = `
-export default class Foo extends React.Component {
-  render() {
-    const { foo, bar } = this.props;
-    return (
-      <div>
-        Foo
-      </div>
-    )
-  }
-}
-`;
-
-
-const sample2 = `
-const Foo = ({ foo }) => {
-  return (
-    <div>
-      Foo {foo}
-    </div>
-  )
-}
-
-export default Foo
-`
-
-const sample3 = `
-export default ({ foo }) => {
-  return (
-    <div>
-      Foo
-    </div>
-  )
-}
-`
-
-const  ExportDefaultDeclaration= 'ExportDefaultDeclaration';
-
-const typeFunctional = 0;
-const typeClass = 1;
-
-const context = {
-  namedExport: null,
-  defaultExport: null,
-  identifier: null,
-  type: null,
-  props: []
-}
+import { typeFunctional, typeClass } from './consts';
 
 function isPropsDeclaration(declaration) {
-  const { init } = declaration
+  const { init } = declaration;
 
-  console.log('init',init.type, init.object.type, init.property.type, init.property.name)
-  if (init.type === 'MemberExpression' && init.object.type === 'ThisExpression' && init.property.type === 'Identifier' && init.property.name === 'props') {
-    return true
+  if (
+    init.type === 'MemberExpression' &&
+    init.object.type === 'ThisExpression' &&
+    init.property.type === 'Identifier' &&
+    init.property.name === 'props'
+  ) {
+    return true;
   }
 }
 
 // walkTree traverses an abstract syntax tree
 function walkTree(node, ctx) {
-  const { body } = ast.program;
 
   switch (node.type) {
     case 'Program': {
+      const { body } = node;
+
       for (let i = 0; i < body.length; i++) {
         const n = body[i];
 
         walkTree(n, ctx);
       }
-      break
+      break;
     }
     case 'ExportDefaultDeclaration': {
       const { declaration } = node;
@@ -84,18 +45,18 @@ function walkTree(node, ctx) {
         ctx.type = typeFunctional;
       }
 
-      walkTree(declaration.body, ctx)
+      walkTree(declaration.body, ctx);
       break;
     }
     case 'ClassBody': {
-      const { body } = node
+      const { body } = node;
 
       for (let i = 0; i < body.length; i++) {
         const nd = body[i];
 
         if (nd.type === 'ClassMethod') {
-          if(nd.key.name === 'render') {
-            walkTree(nd.body, ctx)
+          if (nd.key.name === 'render') {
+            walkTree(nd.body, ctx);
             // break because render method is all we concern
             break;
           }
@@ -109,43 +70,60 @@ function walkTree(node, ctx) {
         const nd = body[i];
 
         if (nd.type === 'VariableDeclaration') {
-          walkTree(nd, ctx)
+          walkTree(nd, ctx);
+        } else if (nd.type === 'ReturnStatement') {
+          ctx.jsxBodyTree = nd.argument;
         }
       }
 
       break;
     }
     case 'VariableDeclaration': {
-      console.log('@@',node)
       const { declarations } = node;
 
       for (let i = 0; i < declarations.length; i++) {
-        const dec= declarations[i];
+        const dec = declarations[i];
 
-        console.log('$$',dec)
         if (dec.type === 'VariableDeclarator' && isPropsDeclaration(dec)) {
           for (let j = 0; j < dec.id.properties.length; j++) {
             const property = dec.id.properties[j];
 
-            ctx.props.push(property.value.name)
+            ctx.props.push(property.value.name);
           }
         }
       }
     }
   }
 
-  return ctx
+  return ctx;
 }
 
+function output(ctx) {
+  const result = generate(ctx.jsxBodyTree);
 
-const ast = babylon.parse(sample1, {
-  sourceType: 'module',
-  plugins: ['jsx']
-});
+  return `export defult ({${ctx.props.join(', ')}}) => {
+  return (
+    ${result.code.replace(/^[\s\t]*/, '', 'g')}
+  )
+}`;
+}
 
+export default function convert(code) {
+  const ast = babylon.parse(code, {
+    sourceType: 'module',
+    plugins: ['jsx']
+  });
 
-walkTree(ast.program, context)
-console.log(context)
+  const context = {
+    namedExport: null,
+    defaultExport: null,
+    identifier: null,
+    type: null,
+    props: [],
+    jsxBodyTree: null
+  };
 
-//console.log(JSON.stringify(ast, null, 2));
+  walkTree(ast.program, context);
 
+  return output(context);
+}
