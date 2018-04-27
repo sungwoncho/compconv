@@ -41,7 +41,6 @@ function walkTree(node, ctx) {
         ctx.type = typeClass;
         ctx.identifier = declaration.id.name;
       } else if (declaration.type === 'ArrowFunctionExpression') {
-        // IDEA: collect arguments as props
         ctx.type = typeFunctional;
       }
 
@@ -98,14 +97,62 @@ function walkTree(node, ctx) {
   return ctx;
 }
 
+function removeInitialIndent(codeStr) {
+  const parts = codeStr.split(/\r?\n/);
+
+  if (parts.length === 1) {
+    return codeStr;
+  }
+
+  const secondLine = parts[1];
+
+  const matched = secondLine.match(/^([\s\t]*)/)
+  const leadingSpaces = matched[1]
+  const leadingSpaceLen = leadingSpaces.length;
+
+  // TODO: this should be configurable
+  const defaultIndent = 2;
+  const regex = new RegExp(`^[\\s\\t]{${leadingSpaceLen - defaultIndent}}`, 'g')
+
+  return parts.map((line, idx) => {
+    return line.replace(regex, '', 'g')
+  }).join('\n')
+}
+
+function repeat(str, n) {
+  let ret = ''
+
+  for (let i = 0; i < n; i++) {
+    ret = ret + str
+  }
+
+  return ret;
+}
+
+function indentCode(codeStr) {
+  const str = removeInitialIndent(codeStr);
+
+  // TODO: configurable
+  const unitIndent = '  '
+  const indent = repeat(unitIndent)
+
+  return str.split(/\r?\n/).map((line) =>  {
+    return '    ' + line;
+  }).join('\n')
+}
+
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
 
-  return `export defult ({${ctx.props.join(', ')}}) => {
+  if (ctx.type === typeClass) {
+    return `export defult ({${ctx.props.join(', ')}}) => {
   return (
-    ${result.code.replace(/^[\s\t]*/, '', 'g')}
+${indentCode(result.code)}
   )
 }`;
+  }
+
+  return ''
 }
 
 export default function convert(code) {
