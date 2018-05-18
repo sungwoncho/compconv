@@ -50,7 +50,7 @@ render() {
 }`);
   });
 
-  it.only("converts class, default export, unspread props", function() {
+  it("converts class, default export, unspread props", function() {
     const input = `export default class Foo extends React.Component {
 render() {
     return (

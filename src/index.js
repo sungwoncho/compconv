@@ -1,6 +1,7 @@
 const babylon = require("babylon");
 import traverse from "babel-traverse";
 import generate from "babel-generator";
+import * as t from "babel-types";
 
 import { typeFunctional, typeClass } from "./consts";
 
@@ -108,7 +109,7 @@ function walkTree(node, ctx) {
     case "JSXExpressionContainer": {
       const { expression } = node;
 
-      if (isPropsExpression(expression)) {
+      if (expression && isPropsExpression(expression)) {
         ctx.props.push(expression.property.name);
       }
     }
@@ -169,13 +170,22 @@ function indentCode(codeStr) {
     .join("\n");
 }
 
+function transformBody(type, code) {
+  if (type === typeClass) {
+    return code.replace(/this\.props\.(\w+)/g, '$1')
+  }
+
+  return code
+}
+
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
+  const code = transformBody(ctx.type, result.code)
 
   if (ctx.type === typeClass) {
     return `export defult ({${ctx.props.join(", ")}}) => {
   return (
-${indentCode(result.code)}
+${indentCode(code)}
   )
 }`;
   }
