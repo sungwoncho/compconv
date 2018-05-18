@@ -177,6 +177,7 @@
                 "expression": false,
                 "async": false,
                 "params": [],
+                // here
                 "body": {
                   "type": "BlockStatement",
                   "start": 63,

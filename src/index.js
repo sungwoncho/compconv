@@ -1,4 +1,3 @@
-//import babylon from 'babylon';
 const babylon = require("babylon");
 import traverse from "babel-traverse";
 import generate from "babel-generator";
@@ -16,6 +15,13 @@ function isPropsDeclaration(declaration) {
   ) {
     return true;
   }
+}
+
+function isPropsExpression(expression) {
+  return expression.type === 'MemberExpression' &&
+    expression.object &&
+    expression.object.property &&
+    expression.object.property.name === 'props';
 }
 
 // walkTree traverses an abstract syntax tree
@@ -71,6 +77,14 @@ function walkTree(node, ctx) {
           walkTree(nd, ctx);
         } else if (nd.type === "ReturnStatement") {
           ctx.jsxBodyTree = nd.argument;
+
+          const { children } = nd.argument
+
+          for (let j = 0; j < children.length; j++) {
+            const child = children[j];
+
+            walkTree(child, ctx);
+          }
         }
       }
 
@@ -89,6 +103,13 @@ function walkTree(node, ctx) {
             ctx.props.push(property.value.name);
           }
         }
+      }
+    }
+    case "JSXExpressionContainer": {
+      const { expression } = node;
+
+      if (isPropsExpression(expression)) {
+        ctx.props.push(expression.property.name);
       }
     }
   }
