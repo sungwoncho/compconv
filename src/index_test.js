@@ -10,6 +10,12 @@ render() {
   const { foo, bar } = this.props;
     return (
       <div>
+        <span>
+          Hello world
+          <div>
+            {foo}
+          </div>
+        </span>
         This is {foo} {bar}
       </div>
     )
@@ -21,6 +27,12 @@ render() {
     expect(output).to.equal(`export defult ({foo, bar}) => {
   return (
     <div>
+      <span>
+        Hello world
+        <div>
+          {foo}
+        </div>
+      </span>
       This is {foo} {bar}
     </div>
   )
@@ -71,4 +83,27 @@ render() {
   )
 }`);
   });
+
+  it("converts functional, default export", function() {
+    const input = `export default ({ foo, bar  }) => {
+  return (
+    <div>
+      This is {foo} {bar}
+    </div>
+  );
+};`;
+
+      const output = convert(input);
+
+      expect(output).to.equal(`export default class MyComponent extends React.Component {
+  render() {
+    return (
+      <div>
+        This is {this.props.foo} {this.props.bar}
+      </div>
+    )
+  }
+}`);
+  });
+
 });

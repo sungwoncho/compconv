@@ -155,17 +155,13 @@ function repeat(str, n) {
   return ret;
 }
 
-function indentCode(codeStr) {
+function indentCode(codeStr, baseIndent) {
   const str = removeInitialIndent(codeStr);
-
-  // TODO: configurable
-  const unitIndent = "  ";
-  const indent = repeat(unitIndent);
 
   return str
     .split(/\r?\n/)
     .map(line => {
-      return "    " + line;
+      return baseIndent + line;
     })
     .join("\n");
 }
@@ -174,6 +170,8 @@ function transformBody(type, code) {
   if (type === typeClass) {
     return code.replace(/this\.props\.(\w+)/g, '$1')
   }
+
+  return code.replace(/{(\w+)}/g, '{this.props.$1}')
 
   return code
 }
@@ -185,12 +183,18 @@ function output(ctx) {
   if (ctx.type === typeClass) {
     return `export defult ({${ctx.props.join(", ")}}) => {
   return (
-${indentCode(code)}
+${indentCode(code, "    ")}
   )
 }`;
   }
 
-  return "";
+  return `export default class MyComponent extends React.Component {
+  render() {
+    return (
+${indentCode(code, "      ")}
+    )
+  }
+}`;
 }
 
 export default function convert(code) {

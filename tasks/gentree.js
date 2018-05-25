@@ -1,16 +1,12 @@
 const babylon = require("babylon");
 
-const sample = `
-export default class Foo extends React.Component {
-  render() {
-    return (
+const sample = `export default ({ foo, bar  }) => {
+  return (
       <div>
-        This is {this.props.foo} {this.props.bar}
+          This is {foo} {bar}
       </div>
-    )
-  }
-}
-`;
+  );
+};`;
 
 const ast = babylon.parse(sample, {
   sourceType: "module",
