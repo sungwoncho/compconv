@@ -1,10 +1,10 @@
 const babylon = require("babylon");
 
-const sample = `export default ({ foo, bar  }) => {
+const sample = `const Foo = ({ foo, bar  }) => {
   return (
-      <div>
-          This is {foo} {bar}
-      </div>
+    <div>
+      This is {foo} {bar}
+    </div>
   );
 };`;
 

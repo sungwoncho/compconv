@@ -97,11 +97,31 @@ function walkTree(node, ctx) {
       for (let i = 0; i < declarations.length; i++) {
         const dec = declarations[i];
 
-        if (dec.type === "VariableDeclarator" && isPropsDeclaration(dec)) {
-          for (let j = 0; j < dec.id.properties.length; j++) {
-            const property = dec.id.properties[j];
 
-            ctx.props.push(property.value.name);
+        if (dec.type === "VariableDeclarator") {
+          if (isPropsDeclaration(dec)) {
+            for (let j = 0; j < dec.id.properties.length; j++) {
+              const property = dec.id.properties[j];
+
+              ctx.props.push(property.value.name);
+            }
+          } else if (dec.init.type === 'ArrowFunctionExpression') {
+            ctx.type = typeFunctional;
+            ctx.identifier = dec.id.name;
+
+            const { params } = dec.init;
+
+            for (let j = 0; j < params.length; j++) {
+              const param = params[j];
+
+              for (let k = 0; k < param.properties.length; k++) {
+                const property = param.properties[k];
+
+                ctx.props.push(property.value.name);
+              }
+            }
+
+            walkTree(dec.init.body, ctx)
           }
         }
       }
@@ -176,25 +196,46 @@ function transformBody(type, code) {
   return code
 }
 
-function output(ctx) {
-  const result = generate(ctx.jsxBodyTree);
-  const code = transformBody(ctx.type, result.code)
-
-  if (ctx.type === typeClass) {
-    return `export defult ({${ctx.props.join(", ")}}) => {
-  return (
-${indentCode(code, "    ")}
-  )
-}`;
+function outputClass(ctx, code) {
+  let id;
+  if (ctx.identifier) {
+    id = ctx.identifier;
+  } else {
+    id = 'MyComponent';
   }
 
-  return `export default class MyComponent extends React.Component {
+  let ret = `class ${id} extends React.Component {
   render() {
     return (
 ${indentCode(code, "      ")}
     )
   }
 }`;
+
+  if (ctx.defaultExport) {
+    ret = `export default ${ret}`;
+  }
+
+  return ret;
+}
+
+function outputFunctional(ctx, code) {
+    return `export defult ({${ctx.props.join(", ")}}) => {
+  return (
+${indentCode(code, "    ")}
+  )
+}`;
+}
+
+function output(ctx) {
+  const result = generate(ctx.jsxBodyTree);
+  const code = transformBody(ctx.type, result.code)
+
+  if (ctx.type === typeClass) {
+    return outputFunctional(ctx, code);
+  }
+
+  return outputClass(ctx, code);
 }
 
 export default function convert(code) {
@@ -213,6 +254,5 @@ export default function convert(code) {
   };
 
   walkTree(ast.program, context);
-
   return output(context);
 }

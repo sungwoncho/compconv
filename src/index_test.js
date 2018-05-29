@@ -106,4 +106,25 @@ render() {
 }`);
   });
 
+  it("converts functional, no export", function() {
+    const input = `const Foo = ({ foo, bar  }) => {
+  return (
+    <div>
+      This is {foo} {bar}
+    </div>
+  );
+};`;
+
+      const output = convert(input);
+
+      expect(output).to.equal(`class Foo extends React.Component {
+  render() {
+    return (
+      <div>
+        This is {this.props.foo} {this.props.bar}
+      </div>
+    )
+  }
+}`);
+  });
 });
