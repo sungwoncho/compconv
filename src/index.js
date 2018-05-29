@@ -42,11 +42,9 @@ function walkTree(node, ctx) {
       const { declaration } = node;
 
       if (declaration.type === "ClassDeclaration") {
-        ctx.type = typeClass;
-        ctx.identifier = declaration.id.name;
         ctx.defaultExport = true;
 
-        walkTree(declaration.body, ctx);
+        walkTree(declaration, ctx);
       } else if (declaration.type === "ArrowFunctionExpression") {
         ctx.type = typeFunctional;
         ctx.defaultExport = true;
@@ -57,6 +55,12 @@ function walkTree(node, ctx) {
       }
 
       break;
+    }
+    case "ClassDeclaration": {
+      ctx.type = typeClass;
+      ctx.identifier = node.id.name;
+
+      walkTree(node.body, ctx)
     }
     case "ClassBody": {
       const { body } = node;
@@ -230,11 +234,23 @@ export default ${id}
 }
 
 function outputFunctional(ctx, code) {
-    return `export defult ({${ctx.props.join(", ")}}) => {
+  const id = ctx.identifier;
+
+  let ret = `({${ctx.props.join(", ")}}) => {
   return (
 ${indentCode(code, "    ")}
   )
 }`;
+
+  if (ctx.defaultExport) {
+    ret = `export default ${ret}`;
+  } else if (ctx.namedExport) {
+    ret = `export ${id} = ${ret}`
+  } else {
+    ret = `const ${id} = ${ret}`
+  }
+
+  return ret;
 }
 
 function output(ctx) {

@@ -24,7 +24,7 @@ render() {
 
     const output = convert(input);
 
-    expect(output).to.equal(`export defult ({foo, bar}) => {
+    expect(output).to.equal(`export default ({foo, bar}) => {
   return (
     <div>
       <span>
@@ -53,7 +53,7 @@ render() {
 
     const output = convert(input);
 
-    expect(output).to.equal(`export defult ({foo, bar}) => {
+    expect(output).to.equal(`export default ({foo, bar}) => {
   return (
     <div>
       This is {foo} {bar}
@@ -75,7 +75,29 @@ render() {
 
     const output = convert(input);
 
-    expect(output).to.equal(`export defult ({foo, bar}) => {
+    expect(output).to.equal(`export default ({foo, bar}) => {
+  return (
+    <div>
+      This is {foo} {bar}
+    </div>
+  )
+}`);
+  });
+
+  it("converts class, no export", function() {
+    const input = `class Foo extends React.Component {
+  render() {
+    return (
+      <div>
+        This is {this.props.foo} {this.props.bar}
+      </div>
+    )
+  }
+}`;
+
+    const output = convert(input);
+
+    expect(output).to.equal(`const Foo = ({foo, bar}) => {
   return (
     <div>
       This is {foo} {bar}

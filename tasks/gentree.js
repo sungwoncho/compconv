@@ -1,12 +1,14 @@
 const babylon = require("babylon");
 
-const sample = `const Foo = ({ foo, bar  }) => {
-  return (
-    <div>
-      This is {foo} {bar}
-    </div>
-  );
-};`;
+const sample = `class Foo extends React.Component {                                  
+  render() {                                                         
+       return (                                                        
+      <div>                                                          
+         This is {this.props.foo} {this.props.bar}                   
+       </div>                                                        
+    )                                                                
+     }                                                                 
+ }`;
 
 const ast = babylon.parse(sample, {
   sourceType: "module",
