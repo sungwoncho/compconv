@@ -245,7 +245,9 @@ ${indentCode(code, "    ")}
   if (ctx.defaultExport) {
     ret = `export default ${ret}`;
   } else if (ctx.namedExport) {
-    ret = `export ${id} = ${ret}`
+    ret = `const ${id} = ${ret}
+
+export default ${id}`
   } else {
     ret = `const ${id} = ${ret}`
   }

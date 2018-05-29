@@ -106,6 +106,32 @@ render() {
 }`);
   });
 
+  it("converts class, named export", function() {
+    const input = `class Foo extends React.Component {
+  render() {
+    return (
+      <div>
+        This is {this.props.foo} {this.props.bar}
+      </div>
+    )
+  }
+}
+
+export default Foo`;
+
+    const output = convert(input);
+
+    expect(output).to.equal(`const Foo = ({foo, bar}) => {
+  return (
+    <div>
+      This is {foo} {bar}
+    </div>
+  )
+}
+
+export default Foo`);
+  });
+
   it("converts functional, default export", function() {
     const input = `export default ({ foo, bar  }) => {
   return (
