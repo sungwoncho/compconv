@@ -127,4 +127,32 @@ render() {
   }
 }`);
   });
+
+  it("converts functional, named export", function() {
+    const input = `const Foo = ({ foo, bar  }) => {
+  return (
+    <div>
+      This is {foo} {bar}
+    </div>
+  );
+};
+
+export default Foo;
+`;
+
+      const output = convert(input);
+
+      expect(output).to.equal(`class Foo extends React.Component {
+  render() {
+    return (
+      <div>
+        This is {this.props.foo} {this.props.bar}
+      </div>
+    )
+  }
+}
+
+export default Foo
+`);
+  });
 });

@@ -41,16 +41,21 @@ function walkTree(node, ctx) {
     case "ExportDefaultDeclaration": {
       const { declaration } = node;
 
-      ctx.defaultExport = true;
-
       if (declaration.type === "ClassDeclaration") {
         ctx.type = typeClass;
         ctx.identifier = declaration.id.name;
+        ctx.defaultExport = true;
+
+        walkTree(declaration.body, ctx);
       } else if (declaration.type === "ArrowFunctionExpression") {
         ctx.type = typeFunctional;
+        ctx.defaultExport = true;
+
+        walkTree(declaration.body, ctx);
+      } else if (declaration.type === 'Identifier') {
+        ctx.namedExport = true;
       }
 
-      walkTree(declaration.body, ctx);
       break;
     }
     case "ClassBody": {
@@ -214,6 +219,11 @@ ${indentCode(code, "      ")}
 
   if (ctx.defaultExport) {
     ret = `export default ${ret}`;
+  } else if (ctx.namedExport) {
+    ret = `${ret}
+
+export default ${id}
+`
   }
 
   return ret;
