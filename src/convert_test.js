@@ -1,5 +1,5 @@
 import chai from "chai";
-import convert from "./index";
+import convert from "./convert";
 
 const { expect } = chai;
 
@@ -141,9 +141,10 @@ export default Foo`);
   );
 };`;
 
-      const output = convert(input);
+    const output = convert(input);
 
-      expect(output).to.equal(`export default class MyComponent extends React.Component {
+    expect(output).to
+      .equal(`export default class MyComponent extends React.Component {
   render() {
     return (
       <div>
@@ -163,9 +164,9 @@ export default Foo`);
   );
 };`;
 
-      const output = convert(input);
+    const output = convert(input);
 
-      expect(output).to.equal(`class Foo extends React.Component {
+    expect(output).to.equal(`class Foo extends React.Component {
   render() {
     return (
       <div>
@@ -188,9 +189,9 @@ export default Foo`);
 export default Foo;
 `;
 
-      const output = convert(input);
+    const output = convert(input);
 
-      expect(output).to.equal(`class Foo extends React.Component {
+    expect(output).to.equal(`class Foo extends React.Component {
   render() {
     return (
       <div>

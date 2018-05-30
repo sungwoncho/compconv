@@ -1,7 +1,5 @@
 const babylon = require("babylon");
-import traverse from "babel-traverse";
 import generate from "babel-generator";
-import * as t from "babel-types";
 
 import { typeFunctional, typeClass } from "./consts";
 
@@ -19,10 +17,12 @@ function isPropsDeclaration(declaration) {
 }
 
 function isPropsExpression(expression) {
-  return expression.type === 'MemberExpression' &&
+  return (
+    expression.type === "MemberExpression" &&
     expression.object &&
     expression.object.property &&
-    expression.object.property.name === 'props';
+    expression.object.property.name === "props"
+  );
 }
 
 // walkTree traverses an abstract syntax tree
@@ -50,7 +50,7 @@ function walkTree(node, ctx) {
         ctx.defaultExport = true;
 
         walkTree(declaration.body, ctx);
-      } else if (declaration.type === 'Identifier') {
+      } else if (declaration.type === "Identifier") {
         ctx.namedExport = true;
       }
 
@@ -60,7 +60,7 @@ function walkTree(node, ctx) {
       ctx.type = typeClass;
       ctx.identifier = node.id.name;
 
-      walkTree(node.body, ctx)
+      walkTree(node.body, ctx);
     }
     case "ClassBody": {
       const { body } = node;
@@ -88,7 +88,7 @@ function walkTree(node, ctx) {
         } else if (nd.type === "ReturnStatement") {
           ctx.jsxBodyTree = nd.argument;
 
-          const { children } = nd.argument
+          const { children } = nd.argument;
 
           for (let j = 0; j < children.length; j++) {
             const child = children[j];
@@ -106,7 +106,6 @@ function walkTree(node, ctx) {
       for (let i = 0; i < declarations.length; i++) {
         const dec = declarations[i];
 
-
         if (dec.type === "VariableDeclarator") {
           if (isPropsDeclaration(dec)) {
             for (let j = 0; j < dec.id.properties.length; j++) {
@@ -114,7 +113,7 @@ function walkTree(node, ctx) {
 
               ctx.props.push(property.value.name);
             }
-          } else if (dec.init.type === 'ArrowFunctionExpression') {
+          } else if (dec.init.type === "ArrowFunctionExpression") {
             ctx.type = typeFunctional;
             ctx.identifier = dec.id.name;
 
@@ -130,7 +129,7 @@ function walkTree(node, ctx) {
               }
             }
 
-            walkTree(dec.init.body, ctx)
+            walkTree(dec.init.body, ctx);
           }
         }
       }
@@ -197,12 +196,12 @@ function indentCode(codeStr, baseIndent) {
 
 function transformBody(type, code) {
   if (type === typeClass) {
-    return code.replace(/this\.props\.(\w+)/g, '$1')
+    return code.replace(/this\.props\.(\w+)/g, "$1");
   }
 
-  return code.replace(/{(\w+)}/g, '{this.props.$1}')
+  return code.replace(/{(\w+)}/g, "{this.props.$1}");
 
-  return code
+  return code;
 }
 
 function outputClass(ctx, code) {
@@ -210,7 +209,7 @@ function outputClass(ctx, code) {
   if (ctx.identifier) {
     id = ctx.identifier;
   } else {
-    id = 'MyComponent';
+    id = "MyComponent";
   }
 
   let ret = `class ${id} extends React.Component {
@@ -227,7 +226,7 @@ ${indentCode(code, "      ")}
     ret = `${ret}
 
 export default ${id}
-`
+`;
   }
 
   return ret;
@@ -247,9 +246,9 @@ ${indentCode(code, "    ")}
   } else if (ctx.namedExport) {
     ret = `const ${id} = ${ret}
 
-export default ${id}`
+export default ${id}`;
   } else {
-    ret = `const ${id} = ${ret}`
+    ret = `const ${id} = ${ret}`;
   }
 
   return ret;
@@ -257,7 +256,7 @@ export default ${id}`
 
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
-  const code = transformBody(ctx.type, result.code)
+  const code = transformBody(ctx.type, result.code);
 
   if (ctx.type === typeClass) {
     return outputFunctional(ctx, code);
