@@ -2,6 +2,14 @@
 
 Convert React component between function and class.
 
+**Demo**: https://sungwoncho.github.io/compconv
+
+## Why?
+
+We often have to switch React component's type but doing so is tedious.
+
+This library allows us to build tools to automate the process.
+
 ## Install
 
     yarn install compconv
