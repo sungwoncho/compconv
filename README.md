@@ -49,3 +49,7 @@ It also works the other way around.
 ## License
 
 MIT
+
+---
+
+> Sponsored by [Dnote](http://dnote.io)
