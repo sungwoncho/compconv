@@ -4,21 +4,18 @@
   "main": "src/convert.js",
   "scripts": {
     "compile": "./node_modules/.bin/babel src/ -d dist/",
-    "test": "yarn lint && yarn compile && ./node_modules/.bin/mocha dist/**/*_test.js",
+    "test":
+      "yarn lint && yarn compile && ./node_modules/.bin/mocha dist/**/*_test.js",
     "lint": "./node_modules/.bin/eslint src"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@bitbucket.org/sungwoncho/compconv.git"
+    "url": "https://github.com/sungwoncho/compconv"
   },
-  "keywords": [
-    "react",
-    "component",
-    "devtools"
-  ],
+  "keywords": ["react", "component", "devtools"],
   "author": "Sung Won Cho",
   "license": "MIT",
-  "homepage": "https://bitbucket.org/sungwoncho/compconv#readme",
+  "homepage": "https://github.com/sungwoncho/compconv",
   "description": "",
   "dependencies": {
     "babel-generator": "^6.26.1",
