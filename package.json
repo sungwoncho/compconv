@@ -1,7 +1,7 @@
 {
   "name": "compconv",
-  "version": "0.1.0",
-  "main": "src/convert.js",
+  "version": "0.1.1",
+  "main": "dist/convert.js",
   "scripts": {
     "compile": "./node_modules/.bin/babel src/ -d dist/",
     "test": "yarn compile && ./node_modules/.bin/mocha dist/**/*_test.js"
