@@ -13,6 +13,8 @@ var _consts = require("./consts");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
 var babylon = require("babylon");
 
 
@@ -29,17 +31,15 @@ function isPropsExpression(expression) {
   return expression.type === "MemberExpression" && expression.object && expression.object.property && expression.object.property.name === "props";
 }
 
-// collectParams iterates through a params object as returned by babel and
+// collectProps iterates through a ObjectPattern object as returned by babel and
 // adds the identifiers to the given context
-function collectParams(ctx, params) {
-  for (var j = 0; j < params.length; j++) {
-    var param = params[j];
+function collectProps(ctx, objPattern) {
+  for (var k = 0; k < objPattern.properties.length; k++) {
+    var property = objPattern.properties[k];
 
-    for (var k = 0; k < param.properties.length; k++) {
-      var property = param.properties[k];
-
-      ctx.props.push(property.value.name);
-    }
+    var propName = property.value.name;
+    var propsObj = _defineProperty({}, propName, []);
+    ctx.props.push(propsObj);
   }
 }
 
@@ -71,7 +71,8 @@ function walkTree(node, ctx) {
           ctx.type = _consts.typeFunctional;
           ctx.defaultExport = true;
 
-          collectParams(ctx, declaration.params);
+          var objPattern = declaration.params[0];
+          collectProps(ctx, objPattern);
           walkTree(declaration.body, ctx);
         } else if (declaration.type === "Identifier") {
           ctx.namedExport = true;
@@ -139,11 +140,12 @@ function walkTree(node, ctx) {
 
           if (dec.type === "VariableDeclarator") {
             if (isPropsDeclaration(dec)) {
-              for (var _j = 0; _j < dec.id.properties.length; _j++) {
-                var property = dec.id.properties[_j];
-
-                ctx.props.push(property.value.name);
-              }
+              // for (let j = 0; j < dec.id.properties.length; j++) {
+              //   const property = dec.id.properties[j];
+              //
+              //   ctx.props.push(property.value.name);
+              // }
+              collectProps(ctx, dec.id);
             } else if (dec.init.type === "ArrowFunctionExpression") {
               ctx.type = _consts.typeFunctional;
               ctx.identifier = dec.id.name;
@@ -151,7 +153,11 @@ function walkTree(node, ctx) {
               var params = dec.init.params;
 
 
-              collectParams(ctx, params);
+              for (var _j = 0; _j < params.length; _j++) {
+                var param = params[_j];
+
+                collectProps(ctx, param);
+              }
               walkTree(dec.init.body, ctx);
             }
           }
@@ -219,7 +225,15 @@ function transformBody(type, code) {
   return code;
 }
 
-function destructureProps(props) {
+function destructureProps(propTrees) {
+  var props = [];
+  for (var i = 0; i < propTrees.length; i++) {
+    var tree = propTrees[i];
+
+    var propName = Object.keys(tree)[0];
+    props.push(propName);
+  }
+
   return "const {" + props.join(', ') + "} = this.props";
 }
 
@@ -231,6 +245,7 @@ function outputClass(ctx, code) {
     id = "MyComponent";
   }
 
+  console.log('ctx', ctx.props);
   var ret = "class " + id + " extends React.Component {\n  render() {\n    " + destructureProps(ctx.props) + "\n\n    return (\n" + indentCode(code, "      ") + "\n    )\n  }\n}";
 
   if (ctx.defaultExport) {

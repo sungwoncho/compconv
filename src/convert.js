@@ -25,17 +25,17 @@ function isPropsExpression(expression) {
   );
 }
 
-// collectParams iterates through a params object as returned by babel and
+// collectProps iterates through a ObjectPattern object as returned by babel and
 // adds the identifiers to the given context
-function collectParams(ctx, params) {
-  for (let j = 0; j < params.length; j++) {
-    const param = params[j];
+function collectProps(ctx, objPattern) {
+  for (let k = 0; k < objPattern.properties.length; k++) {
+    const property = objPattern.properties[k];
 
-    for (let k = 0; k < param.properties.length; k++) {
-      const property = param.properties[k];
-
-      ctx.props.push(property.value.name);
+    const propName = property.value.name
+    const propsObj = {
+      [propName]: []
     }
+    ctx.props.push(propsObj);
   }
 }
 
@@ -63,7 +63,8 @@ function walkTree(node, ctx) {
         ctx.type = typeFunctional;
         ctx.defaultExport = true;
 
-        collectParams(ctx, declaration.params)
+        const objPattern = declaration.params[0]
+        collectProps(ctx, objPattern)
         walkTree(declaration.body, ctx);
       } else if (declaration.type === "Identifier") {
         ctx.namedExport = true;
@@ -123,18 +124,23 @@ function walkTree(node, ctx) {
 
         if (dec.type === "VariableDeclarator") {
           if (isPropsDeclaration(dec)) {
-            for (let j = 0; j < dec.id.properties.length; j++) {
-              const property = dec.id.properties[j];
-
-              ctx.props.push(property.value.name);
-            }
+            // for (let j = 0; j < dec.id.properties.length; j++) {
+            //   const property = dec.id.properties[j];
+            //
+            //   ctx.props.push(property.value.name);
+            // }
+            collectProps(ctx, dec.id);
           } else if (dec.init.type === "ArrowFunctionExpression") {
             ctx.type = typeFunctional;
             ctx.identifier = dec.id.name;
 
             const { params } = dec.init;
 
-            collectParams(ctx, params)
+            for (let j = 0; j < params.length; j++) {
+              const param = params[j];
+
+              collectProps(ctx, param)
+            }
             walkTree(dec.init.body, ctx);
           }
         }
@@ -208,7 +214,15 @@ function transformBody(type, code) {
   return code;
 }
 
-function destructureProps(props) {
+function destructureProps(propTrees) {
+  const props = [];
+  for (var i = 0; i < propTrees.length; i++) {
+    const tree = propTrees[i]
+
+    const propName = Object.keys(tree)[0]
+    props.push(propName)
+  }
+
   return `const {${props.join(', ') }} = this.props`
 }
 
@@ -220,6 +234,7 @@ function outputClass(ctx, code) {
     id = "MyComponent";
   }
 
+  console.log('ctx',ctx.props);
   let ret = `class ${id} extends React.Component {
   render() {
     ${destructureProps(ctx.props)}
