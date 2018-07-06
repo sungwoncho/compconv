@@ -242,35 +242,33 @@ export default Foo
 }`);
   });
 
-//   it("converts function with a inline destructuring of prop", function() {
-//     const input = `const Foo = ({foo, bar}) => {
-//   const { baz } = foo
-//   const { quuz } = bar
-//   const { quz } = baz
-//
-//   return (
-//     <div>
-//       Hi there, { bar } { quuz } { quz }
-//     </div>
-//   )
-// }`;
-//
-//     const output = convert(input);
-//
-//     expect(output).to.equal(`class Foo extends React.Component {
-//   render() {
-//     const { foo } = this.props
-//     const { bar } = foo
-//     const { baz } = bar
-//
-//     return (
-//       <div>
-//         Baz { bar }
-//       </div>
-//     )
-//   }
-// }`);
-//   });
-
-
+  //   it("converts function with a inline destructuring of prop", function() {
+  //     const input = `const Foo = ({foo, bar}) => {
+  //   const { baz } = foo
+  //   const { quuz } = bar
+  //   const { quz } = baz
+  //
+  //   return (
+  //     <div>
+  //       Hi there, { bar } { quuz } { quz }
+  //     </div>
+  //   )
+  // }`;
+  //
+  //     const output = convert(input);
+  //
+  //     expect(output).to.equal(`class Foo extends React.Component {
+  //   render() {
+  //     const { foo } = this.props
+  //     const { bar } = foo
+  //     const { baz } = bar
+  //
+  //     return (
+  //       <div>
+  //         Baz { bar }
+  //       </div>
+  //     )
+  //   }
+  // }`);
+  //   });
 });
