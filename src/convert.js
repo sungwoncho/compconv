@@ -32,10 +32,7 @@ function collectProps(ctx, objPattern) {
     const property = objPattern.properties[k];
 
     const propName = property.value.name;
-    const propsObj = {
-      [propName]: []
-    };
-    ctx.props.push(propsObj);
+    ctx.props[propName] = null;
   }
 }
 
@@ -124,11 +121,6 @@ function walkTree(node, ctx) {
 
         if (dec.type === "VariableDeclarator") {
           if (isPropsDeclaration(dec)) {
-            // for (let j = 0; j < dec.id.properties.length; j++) {
-            //   const property = dec.id.properties[j];
-            //
-            //   ctx.props.push(property.value.name);
-            // }
             collectProps(ctx, dec.id);
           } else if (dec.init.type === "ArrowFunctionExpression") {
             ctx.type = typeFunctional;
@@ -150,7 +142,9 @@ function walkTree(node, ctx) {
       const { expression } = node;
 
       if (expression && isPropsExpression(expression)) {
-        ctx.props.push(expression.property.name);
+        const propName = expression.property.name;
+
+        ctx.props[propName] = null;
       }
     }
   }
@@ -214,16 +208,13 @@ function transformBody(type, code) {
   return code;
 }
 
-function destructureProps(propTrees) {
-  const props = [];
-  for (var i = 0; i < propTrees.length; i++) {
-    const tree = propTrees[i];
+function destructureProps(propTree) {
+  let ret = "";
 
-    const propName = Object.keys(tree)[0];
-    props.push(propName);
-  }
+  const props = Object.keys(propTree);
+  ret = `const {${props.join(", ")}} = this.props`;
 
-  return `const {${props.join(", ")}} = this.props`;
+  return ret;
 }
 
 function outputClass(ctx, code) {
@@ -234,7 +225,6 @@ function outputClass(ctx, code) {
     id = "MyComponent";
   }
 
-  console.log("ctx", ctx.props);
   let ret = `class ${id} extends React.Component {
   render() {
     ${destructureProps(ctx.props)}
@@ -260,7 +250,9 @@ export default ${id}
 function outputFunctional(ctx, code) {
   const id = ctx.identifier;
 
-  let ret = `({${ctx.props.join(", ")}}) => {
+  const props = Object.keys(ctx.props);
+
+  let ret = `({${props.join(", ")}}) => {
   return (
 ${indentCode(code, "    ")}
   )
@@ -281,8 +273,8 @@ export default ${id}`;
 
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
-  console.log("result", result.code);
   const code = transformBody(ctx.type, result.code);
+  console.log("props", ctx.props);
 
   if (ctx.type === typeClass) {
     return outputFunctional(ctx, code);
@@ -291,7 +283,7 @@ function output(ctx) {
   return outputClass(ctx, code);
 }
 
-export default function convert(code) {
+export default function(code) {
   const ast = babylon.parse(code, {
     sourceType: "module",
     plugins: ["jsx"]
@@ -302,7 +294,7 @@ export default function convert(code) {
     defaultExport: null,
     identifier: null,
     type: null,
-    props: [],
+    props: {},
     jsxBodyTree: null
   };
 

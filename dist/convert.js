@@ -3,7 +3,25 @@
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
-exports.default = convert;
+
+exports.default = function (code) {
+  var ast = babylon.parse(code, {
+    sourceType: "module",
+    plugins: ["jsx"]
+  });
+
+  var context = {
+    namedExport: null,
+    defaultExport: null,
+    identifier: null,
+    type: null,
+    props: {},
+    jsxBodyTree: null
+  };
+
+  walkTree(ast.program, context);
+  return output(context);
+};
 
 var _babelGenerator = require("babel-generator");
 
@@ -12,8 +30,6 @@ var _babelGenerator2 = _interopRequireDefault(_babelGenerator);
 var _consts = require("./consts");
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
 var babylon = require("babylon");
 
@@ -38,8 +54,7 @@ function collectProps(ctx, objPattern) {
     var property = objPattern.properties[k];
 
     var propName = property.value.name;
-    var propsObj = _defineProperty({}, propName, []);
-    ctx.props.push(propsObj);
+    ctx.props[propName] = null;
   }
 }
 
@@ -140,11 +155,6 @@ function walkTree(node, ctx) {
 
           if (dec.type === "VariableDeclarator") {
             if (isPropsDeclaration(dec)) {
-              // for (let j = 0; j < dec.id.properties.length; j++) {
-              //   const property = dec.id.properties[j];
-              //
-              //   ctx.props.push(property.value.name);
-              // }
               collectProps(ctx, dec.id);
             } else if (dec.init.type === "ArrowFunctionExpression") {
               ctx.type = _consts.typeFunctional;
@@ -169,7 +179,9 @@ function walkTree(node, ctx) {
 
 
         if (expression && isPropsExpression(expression)) {
-          ctx.props.push(expression.property.name);
+          var propName = expression.property.name;
+
+          ctx.props[propName] = null;
         }
       }
   }
@@ -225,16 +237,13 @@ function transformBody(type, code) {
   return code;
 }
 
-function destructureProps(propTrees) {
-  var props = [];
-  for (var i = 0; i < propTrees.length; i++) {
-    var tree = propTrees[i];
+function destructureProps(propTree) {
+  var ret = "";
 
-    var propName = Object.keys(tree)[0];
-    props.push(propName);
-  }
+  var props = Object.keys(propTree);
+  ret = "const {" + props.join(", ") + "} = this.props";
 
-  return "const {" + props.join(', ') + "} = this.props";
+  return ret;
 }
 
 function outputClass(ctx, code) {
@@ -245,7 +254,6 @@ function outputClass(ctx, code) {
     id = "MyComponent";
   }
 
-  console.log('ctx', ctx.props);
   var ret = "class " + id + " extends React.Component {\n  render() {\n    " + destructureProps(ctx.props) + "\n\n    return (\n" + indentCode(code, "      ") + "\n    )\n  }\n}";
 
   if (ctx.defaultExport) {
@@ -260,7 +268,9 @@ function outputClass(ctx, code) {
 function outputFunctional(ctx, code) {
   var id = ctx.identifier;
 
-  var ret = "({" + ctx.props.join(", ") + "}) => {\n  return (\n" + indentCode(code, "    ") + "\n  )\n}";
+  var props = Object.keys(ctx.props);
+
+  var ret = "({" + props.join(", ") + "}) => {\n  return (\n" + indentCode(code, "    ") + "\n  )\n}";
 
   if (ctx.defaultExport) {
     ret = "export default " + ret;
@@ -275,31 +285,12 @@ function outputFunctional(ctx, code) {
 
 function output(ctx) {
   var result = (0, _babelGenerator2.default)(ctx.jsxBodyTree);
-  console.log('result', result.code);
   var code = transformBody(ctx.type, result.code);
+  console.log("props", ctx.props);
 
   if (ctx.type === _consts.typeClass) {
     return outputFunctional(ctx, code);
   }
 
   return outputClass(ctx, code);
-}
-
-function convert(code) {
-  var ast = babylon.parse(code, {
-    sourceType: "module",
-    plugins: ["jsx"]
-  });
-
-  var context = {
-    namedExport: null,
-    defaultExport: null,
-    identifier: null,
-    type: null,
-    props: [],
-    jsxBodyTree: null
-  };
-
-  walkTree(ast.program, context);
-  return output(context);
 }

@@ -211,11 +211,11 @@ export default Foo
 `);
   });
 
-  it.only("converts function with a destructured prop", function() {
+  it("converts function with a destructured prop", function() {
     const input = `const Foo = ({foo, bar}) => {
   const { baz } = foo
-  const { quuz } = bar
   const { quz } = baz
+  const { quuz } = bar
 
   return (
     <div>
@@ -230,8 +230,8 @@ export default Foo
   render() {
     const {foo, bar} = this.props
     const { baz } = foo
-    const { quuz } = bar
     const { quz } = baz
+    const { quuz } = bar
 
     return (
       <div>

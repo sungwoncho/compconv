@@ -78,12 +78,12 @@ describe("convert", function () {
     expect(output).to.equal("class Foo extends React.Component {\n  render() {\n    const {foo, bar} = this.props\n\n    return (\n      <div>\n        This is {foo} {bar}\n      </div>\n    )\n  }\n}\n\nexport default Foo\n");
   });
 
-  it.only("converts function with a destructured prop", function () {
-    var input = "const Foo = ({foo, bar}) => {\n  const { baz } = foo\n  const { quuz } = bar\n  const { quz } = baz\n\n  return (\n    <div>\n      Hello world {quuz} {quz}\n    </div>\n  )\n}";
+  it("converts function with a destructured prop", function () {
+    var input = "const Foo = ({foo, bar}) => {\n  const { baz } = foo\n  const { quz } = baz\n  const { quuz } = bar\n\n  return (\n    <div>\n      Hello world {quuz} {quz}\n    </div>\n  )\n}";
 
     var output = (0, _convert2.default)(input);
 
-    expect(output).to.equal("class Foo extends React.Component {\n  render() {\n    const {foo, bar} = this.props\n    const { baz } = foo\n    const { quuz } = bar\n    const { quz } = baz\n\n    return (\n      <div>\n        Hello world {quuz} {quz}\n      </div>\n    )\n  }\n}");
+    expect(output).to.equal("class Foo extends React.Component {\n  render() {\n    const {foo, bar} = this.props\n    const { baz } = foo\n    const { quz } = baz\n    const { quuz } = bar\n\n    return (\n      <div>\n        Hello world {quuz} {quz}\n      </div>\n    )\n  }\n}");
   });
 
   //   it("converts function with a inline destructuring of prop", function() {
@@ -115,5 +115,4 @@ describe("convert", function () {
   //   }
   // }`);
   //   });
-
 });
