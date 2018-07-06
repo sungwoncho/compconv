@@ -3,7 +3,18 @@ import generate from "babel-generator";
 
 import { typeFunctional, typeClass } from "./consts";
 
-function isPropsDeclaration(declaration) {
+function isPropsDeclaration(ctx, declaration) {
+  const { init } = declaration;
+  const { propTree } = ctx;
+
+  const props = Object.keys(propTree);
+
+  if (init.type === "Identifier" && props.indexOf(init.name) > -1) {
+    return true;
+  }
+}
+
+function isPropsDestructuring(declaration) {
   const { init } = declaration;
 
   if (
@@ -32,7 +43,7 @@ function collectProps(ctx, objPattern) {
     const property = objPattern.properties[k];
 
     const propName = property.value.name;
-    ctx.props[propName] = null;
+    ctx.propTree[propName] = null;
   }
 }
 
@@ -134,6 +145,17 @@ function walkTree(node, ctx) {
               collectProps(ctx, param);
             }
             walkTree(dec.init.body, ctx);
+          } else {
+            // is it a destructuring of a prop or one of its children?
+            const parentId = dec.init.name;
+
+            // TODO: do breadth first search or depth first search recursively
+            for (let j = 0; j < Object.keys(ctx.propTree).length; j++) {
+              const key = Object.keys(ctx.propTree)[j];
+
+              if (key === parentId) {
+              }
+            }
           }
         }
       }
@@ -144,7 +166,7 @@ function walkTree(node, ctx) {
       if (expression && isPropsExpression(expression)) {
         const propName = expression.property.name;
 
-        ctx.props[propName] = null;
+        ctx.propTree[propName] = null;
       }
     }
   }
@@ -227,7 +249,7 @@ function outputClass(ctx, code) {
 
   let ret = `class ${id} extends React.Component {
   render() {
-    ${destructureProps(ctx.props)}
+    ${destructureProps(ctx.propTree)}
 
     return (
 ${indentCode(code, "      ")}
@@ -250,7 +272,7 @@ export default ${id}
 function outputFunctional(ctx, code) {
   const id = ctx.identifier;
 
-  const props = Object.keys(ctx.props);
+  const props = Object.keys(ctx.propTree);
 
   let ret = `({${props.join(", ")}}) => {
   return (
@@ -274,7 +296,7 @@ export default ${id}`;
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
   const code = transformBody(ctx.type, result.code);
-  console.log("props", ctx.props);
+  console.log("props", ctx.propTree);
 
   if (ctx.type === typeClass) {
     return outputFunctional(ctx, code);
@@ -294,7 +316,7 @@ export default function(code) {
     defaultExport: null,
     identifier: null,
     type: null,
-    props: {},
+    propTree: {},
     jsxBodyTree: null
   };
 

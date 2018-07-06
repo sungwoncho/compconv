@@ -1,11 +1,15 @@
 const babylon = require("babylon");
 
-const sample = `export default ({ foo, bar  }) => {
-return (
-<div>
-  This is {foo} {bar}
-</div>
-);
+const sample = `const Foo = ({foo, bar}) => {
+  const { baz } = foo
+  const { quz } = baz
+  const { quuz } = bar
+
+  return (
+  <div>
+    Hello world {quuz} {quz}
+  </div>
+  )
 };`;
 
 const ast = babylon.parse(sample, {
