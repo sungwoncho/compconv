@@ -132,7 +132,7 @@ export default Foo`;
 export default Foo`);
   });
 
-  it("converts functional, default export", function() {
+  it("converts a function, default export", function() {
     const input = `export default ({ foo, bar  }) => {
   return (
     <div>
@@ -146,9 +146,11 @@ export default Foo`);
     expect(output).to
       .equal(`export default class MyComponent extends React.Component {
   render() {
+    const {foo, bar} = this.props
+
     return (
       <div>
-        This is {this.props.foo} {this.props.bar}
+        This is {foo} {bar}
       </div>
     )
   }
@@ -168,9 +170,11 @@ export default Foo`);
 
     expect(output).to.equal(`class Foo extends React.Component {
   render() {
+    const {foo, bar} = this.props
+
     return (
       <div>
-        This is {this.props.foo} {this.props.bar}
+        This is {foo} {bar}
       </div>
     )
   }
@@ -193,9 +197,11 @@ export default Foo;
 
     expect(output).to.equal(`class Foo extends React.Component {
   render() {
+    const {foo, bar} = this.props
+
     return (
       <div>
-        This is {this.props.foo} {this.props.bar}
+        This is {foo} {bar}
       </div>
     )
   }
@@ -204,4 +210,67 @@ export default Foo;
 export default Foo
 `);
   });
+
+  it.only("converts function with a destructured prop", function() {
+    const input = `const Foo = ({foo, bar}) => {
+  const { baz } = foo
+  const { quuz } = bar
+  const { quz } = baz
+
+  return (
+    <div>
+      Hello world {quuz} {quz}
+    </div>
+  )
+}`;
+
+    const output = convert(input);
+
+    expect(output).to.equal(`class Foo extends React.Component {
+  render() {
+    const {foo, bar} = this.props
+    const { baz } = foo
+    const { quuz } = bar
+    const { quz } = baz
+
+    return (
+      <div>
+        Hello world {quuz} {quz}
+      </div>
+    )
+  }
+}`);
+  });
+
+//   it("converts function with a inline destructuring of prop", function() {
+//     const input = `const Foo = ({foo, bar}) => {
+//   const { baz } = foo
+//   const { quuz } = bar
+//   const { quz } = baz
+//
+//   return (
+//     <div>
+//       Hi there, { bar } { quuz } { quz }
+//     </div>
+//   )
+// }`;
+//
+//     const output = convert(input);
+//
+//     expect(output).to.equal(`class Foo extends React.Component {
+//   render() {
+//     const { foo } = this.props
+//     const { bar } = foo
+//     const { baz } = bar
+//
+//     return (
+//       <div>
+//         Baz { bar }
+//       </div>
+//     )
+//   }
+// }`);
+//   });
+
+
 });

@@ -25,6 +25,20 @@ function isPropsExpression(expression) {
   );
 }
 
+// collectParams iterates through a params object as returned by babel and
+// adds the identifiers to the given context
+function collectParams(ctx, params) {
+  for (let j = 0; j < params.length; j++) {
+    const param = params[j];
+
+    for (let k = 0; k < param.properties.length; k++) {
+      const property = param.properties[k];
+
+      ctx.props.push(property.value.name);
+    }
+  }
+}
+
 // walkTree traverses an abstract syntax tree
 function walkTree(node, ctx) {
   switch (node.type) {
@@ -49,6 +63,7 @@ function walkTree(node, ctx) {
         ctx.type = typeFunctional;
         ctx.defaultExport = true;
 
+        collectParams(ctx, declaration.params)
         walkTree(declaration.body, ctx);
       } else if (declaration.type === "Identifier") {
         ctx.namedExport = true;
@@ -119,16 +134,7 @@ function walkTree(node, ctx) {
 
             const { params } = dec.init;
 
-            for (let j = 0; j < params.length; j++) {
-              const param = params[j];
-
-              for (let k = 0; k < param.properties.length; k++) {
-                const property = param.properties[k];
-
-                ctx.props.push(property.value.name);
-              }
-            }
-
+            collectParams(ctx, params)
             walkTree(dec.init.body, ctx);
           }
         }
@@ -199,9 +205,11 @@ function transformBody(type, code) {
     return code.replace(/this\.props\.(\w+)/g, "$1");
   }
 
-  return code.replace(/{(\w+)}/g, "{this.props.$1}");
-
   return code;
+}
+
+function destructureProps(props) {
+  return `const {${props.join(', ') }} = this.props`
 }
 
 function outputClass(ctx, code) {
@@ -214,6 +222,8 @@ function outputClass(ctx, code) {
 
   let ret = `class ${id} extends React.Component {
   render() {
+    ${destructureProps(ctx.props)}
+
     return (
 ${indentCode(code, "      ")}
     )
@@ -256,6 +266,7 @@ export default ${id}`;
 
 function output(ctx) {
   const result = generate(ctx.jsxBodyTree);
+  console.log('result',result.code);
   const code = transformBody(ctx.type, result.code);
 
   if (ctx.type === typeClass) {
